@@ -23,17 +23,23 @@ export default function AdminDashboard() {
   const [entries, setEntries] = useState<FiqhEntry[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
+  const [page, setPage] = useState(1)
+  const [limit] = useState(10)
+  const [totalEntries, setTotalEntries] = useState(0)
+  const totalPages = Math.ceil(totalEntries / limit)
 
   useEffect(() => {
-    fetchEntries()
-  }, [])
+    fetchEntries(page)
+  }, [page])
 
-  const fetchEntries = async () => {
+  const fetchEntries = async (page: number) => {
+    setIsLoading(true)
     try {
-      const response = await fetch('/api/admin/entries')
+      const response = await fetch(`/api/admin/entries?page=${page}&limit=${limit}`)
       if (response.ok) {
-        const data = await response.json()
+        const { data, count } = await response.json()
         setEntries(data)
+        setTotalEntries(count || 0)
       }
     } catch (error) {
       console.error('Error fetching entries:', error)
@@ -54,7 +60,7 @@ export default function AdminDashboard() {
       })
 
       if (response.ok) {
-        setEntries(entries.filter(entry => entry.id !== id))
+        fetchEntries(page)
       } else {
         alert('Gagal menghapus entri')
       }
@@ -74,7 +80,7 @@ export default function AdminDashboard() {
     })
   }
 
-  if (isLoading) {
+  if (isLoading && entries.length === 0) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="w-8 h-8 animate-spin" />
@@ -103,11 +109,12 @@ export default function AdminDashboard() {
         <CardHeader>
           <CardTitle>Daftar Entri</CardTitle>
           <CardDescription>
-            Total {entries.length} entri tersimpan
+            Total {totalEntries} entri tersimpan
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {entries.length === 0 ? (
+          {isLoading && <div className="absolute inset-0 bg-white/50 flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin" /></div>}
+          {entries.length === 0 && !isLoading ? (
             <div className="text-center py-8">
               <p className="text-muted-foreground mb-4">
                 Belum ada entri tersimpan
@@ -120,52 +127,77 @@ export default function AdminDashboard() {
               </Link>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Judul</TableHead>
-                  <TableHead>Tipe</TableHead>
-                  <TableHead>Tanggal Dibuat</TableHead>
-                  <TableHead className="text-right">Aksi</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {entries.map((entry) => (
-                  <TableRow key={entry.id}>
-                    <TableCell className="font-medium max-w-md">
-                      <div className="truncate">{entry.title}</div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={entry.entry_type === 'ibarat' ? 'default' : 'secondary'}>
-                        {entry.entry_type}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{formatDate(entry.created_at)}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Link href={`/admin/edit/${entry.id}`}>
-                          <Button variant="outline" size="sm">
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                        </Link>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDelete(entry.id)}
-                          disabled={isDeleting === entry.id}
-                        >
-                          {isDeleting === entry.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Trash2 className="w-4 h-4" />
-                          )}
-                        </Button>
-                      </div>
-                    </TableCell>
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Judul</TableHead>
+                    <TableHead>Tipe</TableHead>
+                    <TableHead>Tanggal Dibuat</TableHead>
+                    <TableHead className="text-right">Aksi</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {entries.map((entry) => (
+                    <TableRow key={entry.id}>
+                      <TableCell className="font-medium max-w-md">
+                        <div className="truncate">{entry.title}</div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={entry.entry_type === 'ibarat' ? 'default' : 'secondary'}>
+                          {entry.entry_type}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{formatDate(entry.created_at)}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Link href={`/admin/edit/${entry.id}`}>
+                            <Button variant="outline" size="sm">
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          </Link>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDelete(entry.id)}
+                            disabled={isDeleting === entry.id}
+                          >
+                            {isDeleting === entry.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-4 h-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <div className="flex items-center justify-between mt-4">
+                <span className="text-sm text-muted-foreground">
+                  Halaman {page} dari {totalPages}
+                </span>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage(page - 1)}
+                    disabled={page === 1}
+                  >
+                    Sebelumnya
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage(page + 1)}
+                    disabled={page === totalPages}
+                  >
+                    Berikutnya
+                  </Button>
+                </div>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

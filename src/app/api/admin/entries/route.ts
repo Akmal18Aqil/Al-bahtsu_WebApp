@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { supabaseAdmin } from '@/lib/supabaseClient'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession()
     
@@ -10,17 +10,30 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { searchParams } = new URL(request.url)
+    const page = parseInt(searchParams.get('page') || '1', 10)
+    const limit = parseInt(searchParams.get('limit') || '10', 10)
+    const from = (page - 1) * limit
+    const to = from + limit - 1
+
     const { data, error } = await supabaseAdmin
       .from('fiqh_entries')
       .select('id, title, entry_type, created_at')
       .order('created_at', { ascending: false })
+      .range(from, to)
 
     if (error) {
       console.error('Database error:', error)
       return NextResponse.json({ error: 'Database error' }, { status: 500 })
     }
 
-    return NextResponse.json(data)
+    const { count } = await supabaseAdmin
+      .from('fiqh_entries')
+      .select('*', { count: 'exact', head: true })
+
+    const response = NextResponse.json({ data, count })
+    response.headers.set('Cache-Control', 's-maxage=60, stale-while-revalidate=300')
+    return response
   } catch (error) {
     console.error('API error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { supabase } from '@/lib/supabaseClient'
 
 interface EntryDetailPageProps {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 interface FiqhEntry {
@@ -25,10 +25,11 @@ interface FiqhEntry {
 }
 
 export async function generateMetadata({ params }: EntryDetailPageProps): Promise<Metadata> {
+  const { id } = await params
   const { data: entry } = await supabase
     .from('fiqh_entries')
     .select('title')
-    .eq('id', params.id)
+    .eq('id', id)
     .single()
 
   if (!entry) {
@@ -44,10 +45,11 @@ export async function generateMetadata({ params }: EntryDetailPageProps): Promis
 }
 
 export default async function EntryDetailPage({ params }: EntryDetailPageProps) {
+  const { id } = await params
   const { data: entry, error } = await supabase
     .from('fiqh_entries')
     .select('*')
-    .eq('id', params.id)
+    .eq('id', id)
     .single()
 
   if (error || !entry) {

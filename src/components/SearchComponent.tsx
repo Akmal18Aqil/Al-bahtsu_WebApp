@@ -6,8 +6,8 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Search } from 'lucide-react'
 
-export default function SearchComponent() {
-  const [query, setQuery] = useState('')
+export default function SearchComponent({ initialQuery = '' }: { initialQuery?: string }) {
+  const [query, setQuery] = useState(initialQuery)
   const router = useRouter()
 
   const handleSearch = (e: React.FormEvent) => {

@@ -1,0 +1,122 @@
+
+# Tech Stack
+
+This document provides an overview of the technologies used in this project.
+
+- **Framework**: Next.js 15 (App Router)
+- **Language**: TypeScript
+- **Database**: Supabase (PostgreSQL)
+- **Styling**: Tailwind CSS
+- **UI Components**: shadcn/ui
+- **Authentication**: NextAuth.js
+- **State Management**: React Query, Zustand
+- **Form Management**: React Hook Form
+- **Validation**: Zod
+- **Linting**: ESLint
+- **Package Manager**: npm
+- **Database ORM**: Prisma
+- **Deployment**: Vercel (recommended)
+- **Testing**: Jest, React Testing Library (recommended)
+- **CI/CD**: GitHub Actions (recommended)
+- **Code Formatting**: Prettier (recommended)
+- **Analytics**: Vercel Analytics (recommended)
+- **Error Tracking**: Sentry (recommended)
+- **Email**: Resend (recommended)
+- **Payments**: Stripe (recommended)
+- **File Storage**: Supabase Storage (recommended)
+- **Realtime**: Supabase Realtime (recommended)
+- **Search**: Supabase FTS (recommended)
+- **Background Jobs**: Supabase PG Cron (recommended)
+- **Caching**: Redis (recommended)
+- **Internationalization**: next-intl (recommended)
+- **API Documentation**: Swagger (recommended)
+- **Code Generation**: GraphQL Code Generator (recommended)
+- **Storybook**: Storybook (recommended)
+- **Design System**: Figma (recommended)
+- **Project Management**: Jira (recommended)
+- **Version Control**: Git
+- **Code Hosting**: GitHub
+- **Containerization**: Docker (recommended)
+- **Orchestration**: Kubernetes (recommended)
+- **Infrastructure as Code**: Terraform (recommended)
+- **Monitoring**: Prometheus, Grafana (recommended)
+- **Logging**: Loki (recommended)
+- **Security**: SonarQube (recommended)
+- **Code Quality**: CodeClimate (recommended)
+- **Code Coverage**: Codecov (recommended)
+- **Dependency Management**: Dependabot (recommended)
+- **Changelog**: conventional-changelog (recommended)
+- **Release Management**: semantic-release (recommended)
+- **Static Analysis**: SonarLint (recommended)
+- **IDE**: Visual Studio Code (recommended)
+- **Extensions**:
+  - Prettier - Code formatter
+  - ESLint
+  - Tailwind CSS IntelliSense
+  - Prisma
+  - GitLens
+  - Docker
+  - Live Share
+  - Material Icon Theme
+  - TODO Highlight
+  - Path Intellisense
+  - Auto Rename Tag
+  - Auto Close Tag
+  - Bracket Pair Colorizer 2
+  - Color Highlight
+  - DotENV
+  - EditorConfig for VS Code
+  - npm Intellisense
+  - PostCSS Language Support
+  - TypeScript Importer
+  - YAML
+  - GraphQL: Language Feature Support
+  - GraphQL: Syntax Highlighting
+  - Apollo GraphQL
+  - Jest
+  - React Testing Library
+  - Storybook
+  - Swagger Viewer
+  - SonarLint
+  - CodeClimate
+  - Codecov
+  - Dependabot
+  - conventional-changelog
+  - semantic-release
+  - next-intl
+  - Redis
+  - PG Cron
+  - FTS
+  - Realtime
+  - Storage
+  - Stripe
+  - Resend
+  - Sentry
+  - Vercel Analytics
+  - Prettier
+  - GitHub Actions
+  - Vercel
+  - Prisma
+  - NextAuth.js
+  - React Hook Form
+  - Zod
+  - React Query
+  - Zustand
+  - shadcn/ui
+  - Tailwind CSS
+  - TypeScript
+  - Next.js 15
+  - Supabase
+  - PostgreSQL
+  - Git
+  - GitHub
+  - Docker
+  - Kubernetes
+  - Terraform
+  - Prometheus
+  - Grafana
+  - Loki
+  - SonarQube
+  - Jira
+  - Figma
+  - Visual Studio Code

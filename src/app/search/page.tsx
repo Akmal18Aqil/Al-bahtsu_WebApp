@@ -1,15 +1,16 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
 import SearchComponent from '@/components/SearchComponent'
 import FiqhCard from '@/components/FiqhCard'
 import { supabase } from '@/lib/supabaseClient'
+import { Button } from '@/components/ui/button'
 
 interface SearchPageProps {
-  searchParams: { q?: string }
+  searchParams: Promise<{ q?: string; page?: string }>
 }
 
 export async function generateMetadata({ searchParams }: SearchPageProps): Promise<Metadata> {
-  // `searchParams` may be an async proxy in Next.js — await it before use
   const params = (await searchParams) as any
   const query = params?.q || ''
   return {
@@ -18,10 +19,13 @@ export async function generateMetadata({ searchParams }: SearchPageProps): Promi
   }
 }
 
+export const revalidate = 3600
+
 export default async function SearchPage({ searchParams }: SearchPageProps) {
-  // Await searchParams as Next.js may provide it as an async proxy
   const params = (await searchParams) as any
   const query = params?.q || ''
+  const page = parseInt(params?.page || '1', 10)
+  const limit = 10
 
   if (!query) {
     return (
@@ -38,8 +42,11 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   }
 
   try {
+    const from = (page - 1) * limit
     const { data: results, error } = await supabase.rpc('search_fiqh', { 
-      search_query: query 
+      search_query: query,
+      limit_count: limit,
+      offset_count: from
     })
 
     if (error) {
@@ -57,22 +64,42 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       )
     }
 
+    // Since RPC doesn't easily return total count with pagination, we do a separate count
+    const { count } = await supabase
+      .from('fiqh_entries')
+      .select('*', { count: 'exact', head: true })
+      .textSearch('fts', query)
+
+    const totalResults = count || 0
+    const totalPages = Math.ceil(totalResults / limit)
+
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-3xl font-bold text-center mb-8">
             Hasil Pencarian: "{query}"
           </h1>
-          <SearchComponent />
+          <SearchComponent initialQuery={query} />
           
           {results && results.length > 0 ? (
             <div className="mt-8 space-y-4">
               <p className="text-muted-foreground">
-                Ditemukan {results.length} hasil
+                Menampilkan {results.length} dari {totalResults} hasil
               </p>
               {results.map((entry) => (
                 <FiqhCard key={entry.id} entry={entry} />
               ))}
+              <div className="flex items-center justify-between mt-8">
+                <Button asChild variant="outline" disabled={page <= 1}>
+                  <Link href={`/search?q=${query}&page=${page - 1}`}>Sebelumnya</Link>
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  Halaman {page} dari {totalPages}
+                </span>
+                <Button asChild variant="outline" disabled={page >= totalPages}>
+                  <Link href={`/search?q=${query}&page=${page + 1}`}>Berikutnya</Link>
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="text-center text-muted-foreground mt-8">
