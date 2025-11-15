@@ -1,0 +1,92 @@
+import { Metadata } from 'next'
+import { notFound } from 'next/navigation'
+import SearchComponent from '@/components/SearchComponent'
+import FiqhCard from '@/components/FiqhCard'
+import { supabase } from '@/lib/supabaseClient'
+
+interface SearchPageProps {
+  searchParams: { q?: string }
+}
+
+export async function generateMetadata({ searchParams }: SearchPageProps): Promise<Metadata> {
+  // `searchParams` may be an async proxy in Next.js — await it before use
+  const params = (await searchParams) as any
+  const query = params?.q || ''
+  return {
+    title: query ? `Hasil Pencarian: "${query}" - Khazanah Fikih` : 'Pencarian - Khazanah Fikih',
+    description: query ? `Hasil pencarian untuk "${query}" di Khazanah Fikih` : 'Cari rumusan dan ibarat fikih',
+  }
+}
+
+export default async function SearchPage({ searchParams }: SearchPageProps) {
+  // Await searchParams as Next.js may provide it as an async proxy
+  const params = (await searchParams) as any
+  const query = params?.q || ''
+
+  if (!query) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-3xl font-bold text-center mb-8">Pencarian</h1>
+          <SearchComponent />
+          <p className="text-center text-muted-foreground mt-8">
+            Masukkan kata kunci untuk mencari rumusan atau ibarat fikih
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  try {
+    const { data: results, error } = await supabase.rpc('search_fiqh', { 
+      search_query: query 
+    })
+
+    if (error) {
+      console.error('Search error:', error)
+      return (
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-4xl mx-auto">
+            <h1 className="text-3xl font-bold text-center mb-8">Pencarian</h1>
+            <SearchComponent />
+            <div className="text-center text-destructive mt-8">
+              Terjadi kesalahan saat melakukan pencarian. Silakan coba lagi.
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-3xl font-bold text-center mb-8">
+            Hasil Pencarian: "{query}"
+          </h1>
+          <SearchComponent />
+          
+          {results && results.length > 0 ? (
+            <div className="mt-8 space-y-4">
+              <p className="text-muted-foreground">
+                Ditemukan {results.length} hasil
+              </p>
+              {results.map((entry) => (
+                <FiqhCard key={entry.id} entry={entry} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center text-muted-foreground mt-8">
+              <p>Tidak ada hasil ditemukan untuk "{query}"</p>
+              <p className="text-sm mt-2">
+                Coba gunakan kata kunci yang berbeda atau periksa ejaan Anda
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  } catch (error) {
+    console.error('Search page error:', error)
+    notFound()
+  }
+}

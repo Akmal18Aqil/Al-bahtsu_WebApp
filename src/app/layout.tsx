@@ -1,0 +1,52 @@
+import type { Metadata } from "next";
+import { Inter, Noto_Naskh_Arabic } from "next/font/google";
+import "./globals.css";
+import { Toaster } from "@/components/ui/toaster";
+import Providers from "@/components/Providers";
+
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+});
+
+const notoNaskhArabic = Noto_Naskh_Arabic({
+  variable: "--font-arabic",
+  subsets: ["arabic"],
+  weight: ["400", "600", "700"],
+});
+
+export const metadata: Metadata = {
+  title: "Khazanah Fikih - Mesin Pencari Rumusan & Ibarat Fikih",
+  description: "Platform pencarian canggih untuk menemukan rumusan musyawarah dan ibarat fikih dari berbagai sumber terpercaya.",
+  keywords: ["fikih", "islam", "rumusan", "ibarat", "musyawarah", "khazanah", "NU"],
+  authors: [{ name: "Khazanah Fikih Team" }],
+  openGraph: {
+    title: "Khazanah Fikih",
+    description: "Platform pencarian canggih untuk menemukan rumusan musyawarah dan ibarat fikih",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Khazanah Fikih",
+    description: "Platform pencarian canggih untuk menemukan rumusan musyawarah dan ibarat fikih",
+  },
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="id" suppressHydrationWarning>
+      <body
+        className={`${inter.variable} ${notoNaskhArabic.variable} font-sans antialiased bg-background text-foreground`}
+      >
+        <Providers>
+          {children}
+          <Toaster />
+        </Providers>
+      </body>
+    </html>
+  );
+}
