@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "nodemon --exec \"next dev -p 3000\" --watch src --ext ts,tsx,js,jsx 2>&1 | tee dev.log",
+    "dev": "nodemon --exec \"next dev -p 3000 -H 192.168.83.1\" --watch src --ext ts,tsx,js,jsx 2>&1 ",
     "build": "next build && copyfiles -u 1 .next/static/** .next/standalone/.next/static && copyfiles -u 1 public/** .next/standalone/public",
     "start": "NODE_ENV=production node .next/standalone/server.js 2>&1 | tee server.log",
     "lint": "next lint"
