@@ -82,7 +82,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
           <SearchComponent initialQuery={query} />
           
           {results && results.length > 0 ? (
-            <div className="mt-8 space-y-4">
+            <div className="mt-8 space-y-8">
               <p className="text-muted-foreground">
                 Menampilkan {results.length} dari {totalResults} hasil
               </p>

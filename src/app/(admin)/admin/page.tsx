@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Loader2, Plus, Edit, Trash2 } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { AdminTableSkeleton } from '@/components/AdminTableSkeleton'
 
 interface FiqhEntry {
   id: string
@@ -80,14 +81,6 @@ export default function AdminDashboard() {
     })
   }
 
-  if (isLoading && entries.length === 0) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 animate-spin" />
-      </div>
-    )
-  }
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -113,8 +106,9 @@ export default function AdminDashboard() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {isLoading && <div className="absolute inset-0 bg-white/50 flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin" /></div>}
-          {entries.length === 0 && !isLoading ? (
+          {isLoading ? (
+            <AdminTableSkeleton />
+          ) : entries.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-muted-foreground mb-4">
                 Belum ada entri tersimpan

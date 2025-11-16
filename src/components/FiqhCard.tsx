@@ -22,7 +22,7 @@ interface FiqhCardProps {
 export default function FiqhCard({ entry }: FiqhCardProps) {
   return (
     <Link href={`/entry/${entry.id}`}>
-      <Card className="hover:shadow-md transition-shadow cursor-pointer">
+      <Card className="hover:shadow-md transition-shadow cursor-pointer mb-6">
         <CardHeader>
           <div className="flex items-start justify-between gap-2">
             <CardTitle className="text-xl line-clamp-2">{entry.title}</CardTitle>

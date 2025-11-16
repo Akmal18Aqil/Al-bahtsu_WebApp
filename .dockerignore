@@ -1,13 +1,24 @@
+# Git
+.git
+
+# Docker
 Dockerfile
 .dockerignore
+
+# Dependencies
 node_modules
 npm-debug.log
-README.md
-.next
-.git
-package-lock.json
 yarn.lock
 pnpm-lock.yaml
-test
+
+# Next.js build output
+.next
+
+# Environment variables
+.env.local
+.env.*.local
+
+# Logs and test files
 *.log
+test
 local-*

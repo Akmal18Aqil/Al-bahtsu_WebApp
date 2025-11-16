@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  allowedDevOrigins: ['*'],
   /* config options here */
   // 禁用 Next.js 热重载，由 nodemon 处理重编译
   reactStrictMode: false,
