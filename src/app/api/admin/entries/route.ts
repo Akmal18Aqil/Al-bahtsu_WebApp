@@ -50,27 +50,48 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     
-    const { data, error } = await supabaseAdmin
+    const { data: entryData, error: entryError } = await supabaseAdmin
       .from('fiqh_entries')
       .insert({
         title: body.title,
         question_text: body.question_text || null,
         answer_summary: body.answer_summary,
         ibarat_text: body.ibarat_text,
-        source_kitab: body.source_kitab || null,
-        source_details: body.source_details || null,
         musyawarah_source: body.musyawarah_source || null,
         entry_type: body.entry_type,
       })
       .select()
       .single()
 
-    if (error) {
-      console.error('Database error:', error)
+    if (entryError) {
+      console.error('Database error:', entryError)
       return NextResponse.json({ error: 'Database error' }, { status: 500 })
     }
 
-    return NextResponse.json(data, { status: 201 })
+    // Insert source books if provided
+    if (body.source_books && body.source_books.length > 0) {
+      const sourceBooks = body.source_books
+        .filter((book: any) => book.kitab_name.trim())
+        .map((book: any, index: number) => ({
+          entry_id: entryData.id,
+          kitab_name: book.kitab_name,
+          details: book.details || null,
+          order_index: index,
+        }))
+
+      if (sourceBooks.length > 0) {
+        const { error: booksError } = await supabaseAdmin
+          .from('source_books')
+          .insert(sourceBooks)
+
+        if (booksError) {
+          console.error('Source books insert error:', booksError)
+          // Don't fail the whole request, just log the error
+        }
+      }
+    }
+
+    return NextResponse.json(entryData, { status: 201 })
   } catch (error) {
     console.error('API error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

@@ -21,9 +21,7 @@ CREATE TABLE IF NOT EXISTS public.fiqh_entries (
     answer_summary TEXT NOT NULL, -- Teks jawaban/rumusan (dalam Bahasa Indonesia)
     ibarat_text TEXT NOT NULL, -- Teks ibarat (utama, dalam Bahasa Arab, termasuk harakat)
 
-    -- Metadata Sumber
-    source_kitab TEXT, -- Nama kitab (misal: "Fathul Mu'in" atau "I'anatut Thalibin")
-    source_details TEXT, -- Detail sumber (misal: "Bab Buyu', Hal. 50")
+    -- Sumber Musyawarah
     musyawarah_source TEXT, -- Sumber musyawarah (misal: "LBMNU Jatim, 2023" atau "Muktamar NU ke-31")
 
     -- Kategori & Tipe
@@ -34,7 +32,49 @@ CREATE TABLE IF NOT EXISTS public.fiqh_entries (
 );
 
 -- =====================================================
--- 2. Trigger untuk updated_at
+-- 2. Tabel Sumber Kitab (Source Books)
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS public.source_books (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    entry_id UUID NOT NULL REFERENCES public.fiqh_entries(id) ON DELETE CASCADE,
+    kitab_name TEXT NOT NULL, -- Nama kitab (misal: "Fathul Mu'in")
+    details TEXT, -- Detail sumber (misal: "Bab Buyu', Hal. 50")
+    order_index INTEGER DEFAULT 0, -- Urutan sumber
+    created_at TIMESTAMPTZ DEFAULT now() NOT NULL
+);
+
+-- Index untuk performa query
+CREATE INDEX IF NOT EXISTS idx_source_books_entry_id ON public.source_books(entry_id);
+CREATE INDEX IF NOT EXISTS idx_source_books_order ON public.source_books(entry_id, order_index);
+
+-- RLS untuk source_books
+ALTER TABLE public.source_books ENABLE ROW LEVEL SECURITY;
+
+-- Policy: Publik bisa MEMBACA
+DROP POLICY IF EXISTS "Allow public read access for source_books" ON public.source_books;
+CREATE POLICY "Allow public read access for source_books" 
+ON public.source_books FOR SELECT USING (true);
+
+-- Policy: Authenticated bisa INSERT/UPDATE/DELETE jika user adalah author entri
+DROP POLICY IF EXISTS "Allow authenticated users to modify source_books" ON public.source_books;
+CREATE POLICY "Allow authenticated users to modify source_books" 
+ON public.source_books FOR ALL USING (
+  EXISTS (
+    SELECT 1 FROM public.fiqh_entries
+    WHERE fiqh_entries.id = source_books.entry_id
+    AND fiqh_entries.author_id = auth.uid()
+  )
+) WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM public.fiqh_entries
+    WHERE fiqh_entries.id = source_books.entry_id
+    AND fiqh_entries.author_id = auth.uid()
+  )
+);
+
+-- =====================================================
+-- 3. Trigger untuk updated_at
 -- =====================================================
 
 CREATE OR REPLACE FUNCTION public.handle_updated_at()
@@ -45,13 +85,14 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS handle_fiqh_entries_updated_at ON public.fiqh_entries;
 CREATE TRIGGER handle_fiqh_entries_updated_at
     BEFORE UPDATE ON public.fiqh_entries
     FOR EACH ROW
     EXECUTE FUNCTION public.handle_updated_at();
 
 -- =====================================================
--- 3. Full-Text Search Setup
+-- 4. Full-Text Search Setup
 -- =====================================================
 
 -- Hapus kolom fts_vector jika sudah ada untuk recreate
@@ -69,7 +110,7 @@ GENERATED ALWAYS AS (
 ) STORED;
 
 -- =====================================================
--- 4. Indexes untuk Performa
+-- 5. Indexes untuk Performa
 -- =====================================================
 
 -- GIN Index untuk Full-Text Search
@@ -89,38 +130,43 @@ CREATE INDEX IF NOT EXISTS idx_fiqh_entries_title_trgm
 ON public.fiqh_entries USING GIN(title gin_trgm_ops);
 
 -- =====================================================
--- 5. Row Level Security (RLS)
+-- 6. Row Level Security (RLS)
 -- =====================================================
 
 -- Enable RLS
 ALTER TABLE public.fiqh_entries ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Publik bisa MEMBACA semua entri
+DROP POLICY IF EXISTS "Allow public read access" ON public.fiqh_entries;
 CREATE POLICY "Allow public read access" 
 ON public.fiqh_entries
 FOR SELECT USING (true);
 
 -- Policy: Pengguna terotentikasi bisa INSERT
+DROP POLICY IF EXISTS "Allow authenticated users to insert" ON public.fiqh_entries;
 CREATE POLICY "Allow authenticated users to insert" 
 ON public.fiqh_entries
 FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 
 -- Policy: Pengguna terotentikasi bisa UPDATE data mereka sendiri
+DROP POLICY IF EXISTS "Allow authenticated users to update own data" ON public.fiqh_entries;
 CREATE POLICY "Allow authenticated users to update own data" 
 ON public.fiqh_entries
 FOR UPDATE USING (auth.uid() = author_id);
 
 -- Policy: Pengguna terotentikasi bisa DELETE data mereka sendiri
+DROP POLICY IF EXISTS "Allow authenticated users to delete own data" ON public.fiqh_entries;
 CREATE POLICY "Allow authenticated users to delete own data" 
 ON public.fiqh_entries
 FOR DELETE USING (auth.uid() = author_id);
 
 -- =====================================================
--- 6. Fungsi Pencarian (RPC Function)
+-- 7. Fungsi Pencarian (RPC Function)
 -- =====================================================
 
--- Drop function jika sudah ada
+-- Drop function jika sudah ada (dengan semua signature)
 DROP FUNCTION IF EXISTS public.search_fiqh(TEXT);
+DROP FUNCTION IF EXISTS public.search_fiqh(TEXT, TEXT, INTEGER, INTEGER);
 
 CREATE OR REPLACE FUNCTION public.search_fiqh(
     search_query TEXT DEFAULT '',
@@ -136,12 +182,11 @@ RETURNS TABLE (
     question_text TEXT,
     answer_summary TEXT,
     ibarat_text TEXT,
-    source_kitab TEXT,
-    source_details TEXT,
     musyawarah_source TEXT,
     entry_type TEXT,
     author_id UUID,
-    rank REAL
+    rank REAL,
+    source_books JSONB
 ) 
 LANGUAGE plpgsql
 AS $$
@@ -155,33 +200,43 @@ BEGIN
         e.question_text,
         e.answer_summary,
         e.ibarat_text,
-        e.source_kitab,
-        e.source_details,
         e.musyawarah_source,
         e.entry_type,
         e.author_id,
         CASE 
             WHEN search_query = '' THEN 0
             ELSE ts_rank(e.fts_vector, websearch_to_tsquery('simple', search_query))
-        END as rank
+        END as rank,
+        COALESCE(
+            jsonb_agg(
+                jsonb_build_object(
+                    'id', sb.id,
+                    'kitab_name', sb.kitab_name,
+                    'details', sb.details,
+                    'order_index', sb.order_index
+                ) ORDER BY sb.order_index
+            ) FILTER (WHERE sb.id IS NOT NULL),
+            '[]'::jsonb
+        ) as source_books
     FROM public.fiqh_entries e
+    LEFT JOIN public.source_books sb ON e.id = sb.entry_id
     WHERE 
         -- Jika query kosong, kembalikan semua
         (search_query = '' OR e.fts_vector @@ websearch_to_tsquery('simple', search_query))
         -- Filter berdasarkan tipe jika specified
         AND (entry_type_filter IS NULL OR e.entry_type = entry_type_filter)
+    GROUP BY e.id, e.created_at, e.updated_at, e.title, e.question_text, e.answer_summary, 
+             e.ibarat_text, e.musyawarah_source, e.entry_type, e.author_id, e.fts_vector
     ORDER BY 
-        CASE 
-            WHEN search_query = '' THEN e.created_at DESC
-            ELSE rank DESC, e.created_at DESC
-        END
+        CASE WHEN search_query = '' THEN 0 ELSE rank END DESC,
+        e.created_at DESC
     LIMIT limit_count
     OFFSET offset_count;
 END;
 $$;
 
 -- =====================================================
--- 7. Fungsi Helper untuk Admin
+-- 8. Fungsi Helper untuk Admin
 -- =====================================================
 
 -- Function untuk mendapatkan total count untuk pagination
@@ -206,7 +261,7 @@ END;
 $$;
 
 -- =====================================================
--- 8. Tabel Kategori/Tag (Optional)
+-- 9. Tabel Kategori/Tag (Optional)
 -- =====================================================
 
 CREATE TABLE IF NOT EXISTS public.tags (
@@ -228,22 +283,26 @@ ALTER TABLE public.tags ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.entry_tags ENABLE ROW LEVEL SECURITY;
 
 -- Policies untuk tags
-CREATE POLICY IF NOT EXISTS "Allow public read access for tags" 
+DROP POLICY IF EXISTS "Allow public read access for tags" ON public.tags;
+CREATE POLICY "Allow public read access for tags" 
 ON public.tags FOR SELECT USING (true);
 
-CREATE POLICY IF NOT EXISTS "Allow public read access for entry_tags" 
+DROP POLICY IF EXISTS "Allow public read access for entry_tags" ON public.entry_tags;
+CREATE POLICY "Allow public read access for entry_tags" 
 ON public.entry_tags FOR SELECT USING (true);
 
-CREATE POLICY IF NOT EXISTS "Allow authenticated access for tags" 
+DROP POLICY IF EXISTS "Allow authenticated access for tags" ON public.tags;
+CREATE POLICY "Allow authenticated access for tags" 
 ON public.tags FOR ALL USING (auth.role() = 'authenticated') 
 WITH CHECK (auth.role() = 'authenticated');
 
-CREATE POLICY IF NOT EXISTS "Allow authenticated access for entry_tags" 
+DROP POLICY IF EXISTS "Allow authenticated access for entry_tags" ON public.entry_tags;
+CREATE POLICY "Allow authenticated access for entry_tags" 
 ON public.entry_tags FOR ALL USING (auth.role() = 'authenticated') 
 WITH CHECK (auth.role() = 'authenticated');
 
 -- =====================================================
--- 9. Sample Data (Hanya untuk development)
+-- 10. Sample Data (Hanya untuk development)
 -- =====================================================
 
 -- Hapus data yang sudah ada untuk avoid duplicates
@@ -255,8 +314,6 @@ INSERT INTO public.fiqh_entries (
     question_text, 
     answer_summary, 
     ibarat_text, 
-    source_kitab, 
-    source_details, 
     musyawarah_source, 
     entry_type
 ) VALUES
@@ -265,8 +322,6 @@ INSERT INTO public.fiqh_entries (
     'Bagaimana hukum asuransi jiwa dalam pandangan fikih?',
     'Asuransi jiwa pada dasarnya diperbolehkan selama tidak mengandung unsur riba, gharar, dan maysir. Polis asuransi harus transparan dan tidak merugikan salah satu pihak. Namun perlu diperhatikan akad yang digunakan harus sesuai syariah.',
     'اَلْتَأْمِيْنُ عَلَى الْحَيَاةِ جَائِزٌ شَرْعًا إِذَا لَمْ يَشْتَمِلْ عَلَى الرِّبَا وَالْغَرَرِ وَالْمَيْسِرِ',
-    'Fathul Mu''in',
-    'Bab Takaful, Hal. 245',
     'MUI, 2022',
     'ibarat'
 ),
@@ -275,8 +330,6 @@ INSERT INTO public.fiqh_entries (
     'Apakah qunut dalam shalat subuh hukumnya wajib atau sunnah?',
     'Qunut dalam shalat subuh adalah sunnah muakkadah (sunnah yang ditekankan), bukan wajib. Ditinggalkan tidak mengapa, dan dianjurkan untuk dilakukan. Mayoritas ulama menganut pendapat ini.',
     'اَلْقُنُوْتُ فِي صَلَاةِ الصُّبْحِ سُنَّةٌ مُؤَكَّدَةٌ لَيْسَتْ بِوَاجِبَةٍ',
-    'I''anatut Thalibin',
-    'Juz 1, Hal. 156',
     'LBMNU Jatim, 2023',
     'rumusan'
 ),
@@ -285,11 +338,20 @@ INSERT INTO public.fiqh_entries (
     'Apakah benar daging babi haram dikonsumsi?',
     'Daging babi haram hukumnya untuk dimakan berdasarkan dalil Al-Qur''an dan hadis yang jelas. Larangan ini bersifat qat''i (pasti) dan menjadi ijma'' ulama.',
     'حُرِّمَتْ عَلَيْكُمُ الْمَيْتَةُ وَالدَّمُ وَلَحْمُ الْخِنْزِيرِ',
-    'Al-Qur''an Surah Al-Ma''idah: 3',
-    'Tafsir Ibn Kathir, Juz 2',
     'Al-Qur''an dan Hadis',
     'rumusan'
 );
+
+-- Insert sample source books
+INSERT INTO public.source_books (entry_id, kitab_name, details, order_index)
+SELECT e.id, 'Fathul Mu''in', 'Bab Takaful, Hal. 245', 0
+FROM public.fiqh_entries e WHERE e.title = 'Hukum Asuransi Jiwa'
+UNION ALL
+SELECT e.id, 'I''anatut Thalibin', 'Juz 1, Hal. 156', 0
+FROM public.fiqh_entries e WHERE e.title = 'Hukum Qunut dalam Shalat Subuh'
+UNION ALL
+SELECT e.id, 'Al-Qur''an Surah Al-Ma''idah: 3', 'Tafsir Ibn Kathir, Juz 2', 0
+FROM public.fiqh_entries e WHERE e.title = 'Hukum Makan Daging Babi';
 
 -- Insert sample tags
 INSERT INTO public.tags (name, color) VALUES 
@@ -312,7 +374,7 @@ WHERE (
 ON CONFLICT (entry_id, tag_id) DO NOTHING;
 
 -- =====================================================
--- 10. Grant Permissions
+-- 11. Grant Permissions
 -- =====================================================
 
 -- Grant usage ke anon users untuk RPC functions

@@ -9,8 +9,15 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Loader2, ArrowLeft } from 'lucide-react'
+import { Loader2, ArrowLeft, Plus, Trash2 } from 'lucide-react'
 import Link from 'next/link'
+
+interface SourceBook {
+  id?: string
+  kitab_name: string
+  details?: string
+  order_index: number
+}
 
 interface FiqhEntry {
   id?: string
@@ -18,8 +25,7 @@ interface FiqhEntry {
   question_text?: string
   answer_summary: string
   ibarat_text: string
-  source_kitab?: string
-  source_details?: string
+  source_books?: SourceBook[]
   musyawarah_source?: string
   entry_type: 'rumusan' | 'ibarat'
 }
@@ -31,13 +37,27 @@ interface AdminFormProps {
 
 export default function AdminForm({ entry, isEdit = false }: AdminFormProps) {
   const router = useRouter()
+  
+  // Normalize source_books dari entry
+  const normalizeSourceBooks = (books: any): SourceBook[] => {
+    if (!books) return [{ kitab_name: '', details: '', order_index: 0 }]
+    if (!Array.isArray(books)) return [{ kitab_name: '', details: '', order_index: 0 }]
+    if (books.length === 0) return [{ kitab_name: '', details: '', order_index: 0 }]
+    
+    return books.map((book: any) => ({
+      id: book.id,
+      kitab_name: book.kitab_name || '',
+      details: book.details || '',
+      order_index: book.order_index ?? 0
+    }))
+  }
+
   const [formData, setFormData] = useState<FiqhEntry>({
     title: entry?.title || '',
     question_text: entry?.question_text || '',
     answer_summary: entry?.answer_summary || '',
     ibarat_text: entry?.ibarat_text || '',
-    source_kitab: entry?.source_kitab || '',
-    source_details: entry?.source_details || '',
+    source_books: normalizeSourceBooks(entry?.source_books),
     musyawarah_source: entry?.musyawarah_source || '',
     entry_type: entry?.entry_type || 'ibarat',
   })
@@ -78,6 +98,41 @@ export default function AdminForm({ entry, isEdit = false }: AdminFormProps) {
     setFormData(prev => ({
       ...prev,
       [field]: value
+    }))
+  }
+
+  const handleSourceBookChange = (index: number, field: keyof SourceBook, value: string) => {
+    setFormData(prev => {
+      const newSourceBooks = [...(prev.source_books || [])]
+      newSourceBooks[index] = {
+        ...newSourceBooks[index],
+        [field]: field === 'order_index' ? parseInt(value) : value
+      }
+      return {
+        ...prev,
+        source_books: newSourceBooks
+      }
+    })
+  }
+
+  const addSourceBook = () => {
+    setFormData(prev => ({
+      ...prev,
+      source_books: [
+        ...(prev.source_books || []),
+        { 
+          kitab_name: '', 
+          details: '', 
+          order_index: (prev.source_books?.length || 0) 
+        }
+      ]
+    }))
+  }
+
+  const removeSourceBook = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      source_books: (prev.source_books || []).filter((_, i) => i !== index)
     }))
   }
 
@@ -186,27 +241,73 @@ export default function AdminForm({ entry, isEdit = false }: AdminFormProps) {
               />
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="source_kitab">Nama Kitab (Opsional)</Label>
-                <Input
-                  id="source_kitab"
-                  value={formData.source_kitab}
-                  onChange={(e) => handleInputChange('source_kitab', e.target.value)}
-                  placeholder="contoh: Fathul Mu'in"
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>Sumber Kitab (Opsional)</Label>
+                  <p className="text-sm text-muted-foreground mt-1">Tambahkan satu atau lebih sumber kitab beserta detailnya</p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addSourceBook}
                   disabled={isLoading}
-                />
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Tambah Kitab
+                </Button>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="source_details">Detail Sumber (Opsional)</Label>
-                <Input
-                  id="source_details"
-                  value={formData.source_details}
-                  onChange={(e) => handleInputChange('source_details', e.target.value)}
-                  placeholder="contoh: Bab Buyu', Hal. 50"
-                  disabled={isLoading}
-                />
+              <div className="space-y-4 bg-slate-50 p-4 rounded-lg">
+                {(formData.source_books && formData.source_books.length > 0) ? (
+                  formData.source_books.map((book, index) => (
+                    <div key={index} className="space-y-3 p-4 bg-white border rounded-lg relative">
+                      <div className="absolute top-2 right-2">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeSourceBook(index)}
+                          disabled={isLoading}
+                          className="h-6 w-6 p-0"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </Button>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor={`kitab_name_${index}`} className="text-sm">
+                          Nama Kitab {index + 1}
+                        </Label>
+                        <Input
+                          id={`kitab_name_${index}`}
+                          value={book.kitab_name}
+                          onChange={(e) => handleSourceBookChange(index, 'kitab_name', e.target.value)}
+                          placeholder="contoh: Fathul Mu'in atau I'anatut Thalibin"
+                          disabled={isLoading}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor={`details_${index}`} className="text-sm">
+                          Detail Sumber
+                        </Label>
+                        <Input
+                          id={`details_${index}`}
+                          value={book.details || ''}
+                          onChange={(e) => handleSourceBookChange(index, 'details', e.target.value)}
+                          placeholder="contoh: Bab Buyu', Hal. 50"
+                          disabled={isLoading}
+                        />
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-4 text-center text-muted-foreground bg-white border border-dashed rounded-lg">
+                    Belum ada sumber kitab. Klik "Tambah Kitab" untuk menambahkan.
+                  </div>
+                )}
               </div>
             </div>
 

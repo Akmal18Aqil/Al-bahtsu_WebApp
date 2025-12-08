@@ -13,7 +13,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-  const { id } = await params
+    const { id } = await params
     const { data, error } = await supabaseAdmin
       .from('fiqh_entries')
       .select('*')
@@ -26,6 +26,17 @@ export async function GET(
       }
       console.error('Database error:', error)
       return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
+
+    // Get source books
+    const { data: sourceBooks, error: booksError } = await supabaseAdmin
+      .from('source_books')
+      .select('*')
+      .eq('entry_id', id)
+      .order('order_index', { ascending: true })
+
+    if (!booksError && sourceBooks) {
+      data.source_books = sourceBooks
     }
 
     return NextResponse.json(data)
@@ -56,8 +67,6 @@ export async function PUT(
         question_text: body.question_text || null,
         answer_summary: body.answer_summary,
         ibarat_text: body.ibarat_text,
-        source_kitab: body.source_kitab || null,
-        source_details: body.source_details || null,
         musyawarah_source: body.musyawarah_source || null,
         entry_type: body.entry_type,
       })
@@ -71,6 +80,35 @@ export async function PUT(
       }
       console.error('Database error:', error)
       return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
+
+    // Handle source books update
+    if (body.source_books) {
+      // Delete existing source books
+      await supabaseAdmin
+        .from('source_books')
+        .delete()
+        .eq('entry_id', id)
+
+      // Insert new source books
+      const sourceBooks = body.source_books
+        .filter((book: any) => book.kitab_name && book.kitab_name.trim())
+        .map((book: any, index: number) => ({
+          entry_id: id,
+          kitab_name: book.kitab_name,
+          details: book.details || null,
+          order_index: index,
+        }))
+
+      if (sourceBooks.length > 0) {
+        const { error: booksError } = await supabaseAdmin
+          .from('source_books')
+          .insert(sourceBooks)
+
+        if (booksError) {
+          console.error('Source books update error:', booksError)
+        }
+      }
     }
 
     return NextResponse.json(data)
