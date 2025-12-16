@@ -39,7 +39,7 @@ export default function AdminLayout({
       <nav className="border-b bg-card">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-xl font-semibold">Panel Admin - Khazanah Fikih</h1>
+            <h1 className="text-xl font-semibold">Panel Admin - Muara</h1>
             <div className="flex items-center gap-4">
               <span className="text-sm text-muted-foreground">
                 {session.user?.email}

@@ -1,4 +1,4 @@
-# Khazanah Fikih
+# Muara
 
 Platform pencarian canggih untuk menemukan rumusan musyawarah dan ibarat fikih dari berbagai sumber terpercaya.
 
@@ -42,7 +42,7 @@ Platform pencarian canggih untuk menemukan rumusan musyawarah dan ibarat fikih d
 ### 1. Clone Repository
 ```bash
 git clone <repository-url>
-cd khazanah-fikih
+cd muara
 ```
 
 ### 2. Install Dependencies

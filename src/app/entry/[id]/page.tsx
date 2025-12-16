@@ -38,12 +38,12 @@ export async function generateMetadata({ params }: EntryDetailPageProps): Promis
 
   if (!entry) {
     return {
-      title: 'Entri Tidak Ditemukan - Khazanah Fikih',
+      title: 'Entri Tidak Ditemukan - Muara',
     }
   }
 
   return {
-    title: `${entry.title} - Khazanah Fikih`,
+    title: `${entry.title} - Muara`,
     description: entry.title,
   }
 }
@@ -131,7 +131,7 @@ export default async function EntryDetailPage({ params }: EntryDetailPageProps) 
               <div>
                 <h3 className="font-semibold text-lg mb-2">Ibarat Fikih</h3>
                 <div className="bg-muted/50 p-4 rounded-lg">
-                  <p 
+                  <p
                     className="font-arabic rtl text-lg leading-loose text-right"
                     style={{ fontFamily: 'var(--font-arabic)' }}
                   >

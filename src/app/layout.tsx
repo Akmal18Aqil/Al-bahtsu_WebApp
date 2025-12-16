@@ -16,18 +16,18 @@ const notoNaskhArabic = Noto_Naskh_Arabic({
 });
 
 export const metadata: Metadata = {
-  title: "Khazanah Fikih - Mesin Pencari Rumusan & Ibarat Fikih",
+  title: "Muara - Mesin Pencari Rumusan & Ibarat Fikih",
   description: "Platform pencarian canggih untuk menemukan rumusan musyawarah dan ibarat fikih dari berbagai sumber terpercaya.",
-  keywords: ["fikih", "islam", "rumusan", "ibarat", "musyawarah", "khazanah", "NU"],
+  keywords: ["fikih", "islam", "rumusan", "ibarat", "musyawarah", "muara", "NU"],
   authors: [{ name: "Khazanah Fikih Team" }],
   openGraph: {
-    title: "Khazanah Fikih",
+    title: "Muara",
     description: "Platform pencarian canggih untuk menemukan rumusan musyawarah dan ibarat fikih",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Khazanah Fikih",
+    title: "Muara",
     description: "Platform pencarian canggih untuk menemukan rumusan musyawarah dan ibarat fikih",
   },
 };

@@ -14,8 +14,8 @@ export async function generateMetadata({ searchParams }: SearchPageProps): Promi
   const params = (await searchParams) as any
   const query = params?.q || ''
   return {
-    title: query ? `Hasil Pencarian: "${query}" - Khazanah Fikih` : 'Pencarian - Khazanah Fikih',
-    description: query ? `Hasil pencarian untuk "${query}" di Khazanah Fikih` : 'Cari rumusan dan ibarat fikih',
+    title: query ? `Hasil Pencarian: "${query}" - Muara` : 'Pencarian - Muara',
+    description: query ? `Hasil pencarian untuk "${query}" di Muara` : 'Cari rumusan dan ibarat fikih',
   }
 }
 
@@ -43,7 +43,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
   try {
     const from = (page - 1) * limit
-    const { data: results, error } = await supabase.rpc('search_fiqh', { 
+    const { data: results, error } = await supabase.rpc('search_fiqh', {
       search_query: query,
       limit_count: limit,
       offset_count: from
@@ -80,7 +80,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             Hasil Pencarian: "{query}"
           </h1>
           <SearchComponent initialQuery={query} />
-          
+
           {results && results.length > 0 ? (
             <div className="mt-8 space-y-8">
               <p className="text-muted-foreground">
