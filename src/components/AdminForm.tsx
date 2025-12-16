@@ -1,15 +1,16 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import ArabicText from '@/components/ArabicText'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Loader2, ArrowLeft, Plus, Trash2 } from 'lucide-react'
+import { Loader2, ArrowLeft, Plus, Trash2, Bold, Italic } from 'lucide-react'
 import Link from 'next/link'
 
 interface SourceBook {
@@ -37,13 +38,13 @@ interface AdminFormProps {
 
 export default function AdminForm({ entry, isEdit = false }: AdminFormProps) {
   const router = useRouter()
-  
+
   // Normalize source_books dari entry
   const normalizeSourceBooks = (books: any): SourceBook[] => {
     if (!books) return [{ kitab_name: '', details: '', order_index: 0 }]
     if (!Array.isArray(books)) return [{ kitab_name: '', details: '', order_index: 0 }]
     if (books.length === 0) return [{ kitab_name: '', details: '', order_index: 0 }]
-    
+
     return books.map((book: any) => ({
       id: book.id,
       kitab_name: book.kitab_name || '',
@@ -120,10 +121,10 @@ export default function AdminForm({ entry, isEdit = false }: AdminFormProps) {
       ...prev,
       source_books: [
         ...(prev.source_books || []),
-        { 
-          kitab_name: '', 
-          details: '', 
-          order_index: (prev.source_books?.length || 0) 
+        {
+          kitab_name: '',
+          details: '',
+          order_index: (prev.source_books?.length || 0)
         }
       ]
     }))
@@ -134,6 +135,30 @@ export default function AdminForm({ entry, isEdit = false }: AdminFormProps) {
       ...prev,
       source_books: (prev.source_books || []).filter((_, i) => i !== index)
     }))
+  }
+
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  const handleFormat = (prefix: string, suffix: string) => {
+    const textarea = textareaRef.current
+    if (!textarea) return
+
+    const start = textarea.selectionStart
+    const end = textarea.selectionEnd
+    const text = textarea.value
+    const before = text.substring(0, start)
+    const selected = text.substring(start, end)
+    const after = text.substring(end)
+
+    const newText = before + prefix + selected + suffix + after
+
+    handleInputChange('ibarat_text', newText)
+
+    // Restore styling focus
+    setTimeout(() => {
+      textarea.focus()
+      textarea.setSelectionRange(start + prefix.length, end + prefix.length)
+    }, 0)
   }
 
   return (
@@ -185,8 +210,8 @@ export default function AdminForm({ entry, isEdit = false }: AdminFormProps) {
 
               <div className="space-y-2">
                 <Label htmlFor="entry_type">Tipe Entri *</Label>
-                <Select 
-                  value={formData.entry_type} 
+                <Select
+                  value={formData.entry_type}
                   onValueChange={(value) => handleInputChange('entry_type', value as 'rumusan' | 'ibarat')}
                   disabled={isLoading}
                 >
@@ -228,17 +253,62 @@ export default function AdminForm({ entry, isEdit = false }: AdminFormProps) {
 
             <div className="space-y-2">
               <Label htmlFor="ibarat_text">Teks Ibarat *</Label>
+              <div className="bg-slate-50 p-2 rounded-lg border border-slate-200 mb-2 flex flex-wrap gap-2 items-center">
+                <span className="text-xs font-medium text-muted-foreground mr-2">Format:</span>
+
+                <Button
+                  type="button" variant="outline" size="sm" className="h-7 text-xs gap-1 text-red-600 font-bold bg-white"
+                  onClick={() => handleFormat('[', ']')}
+                  title="Referensi Kitab (Merah & Tebal)"
+                >
+                  [ Ref ]
+                </Button>
+
+                <Button
+                  type="button" variant="outline" size="sm" className="h-7 w-7 p-0 bg-white"
+                  onClick={() => handleFormat('**', '**')}
+                  title="Tebal (Bold)"
+                >
+                  <Bold className="w-3 h-3" />
+                </Button>
+
+                <Button
+                  type="button" variant="outline" size="sm" className="h-7 w-7 p-0 bg-white"
+                  onClick={() => handleFormat('*', '*')}
+                  title="Miring (Italic)"
+                >
+                  <Italic className="w-3 h-3" />
+                </Button>
+
+                <div className="w-px h-4 bg-slate-300 mx-1" />
+
+                <Button
+                  type="button" variant="outline" size="sm" className="h-7 px-2 text-xs bg-white font-mono"
+                  onClick={() => handleFormat('\n***\n', '')}
+                  title="Separator Tengah"
+                >
+                  ***
+                </Button>
+              </div>
               <Textarea
+                ref={textareaRef}
                 id="ibarat_text"
                 value={formData.ibarat_text}
                 onChange={(e) => handleInputChange('ibarat_text', e.target.value)}
-                placeholder="Teks ibarat dalam Bahasa Arab (termasuk harakat)"
+                placeholder="Teks ibarat dalam Bahasa Arab..."
                 rows={6}
                 required
                 disabled={isLoading}
                 className="font-arabic rtl text-right"
                 style={{ fontFamily: 'var(--font-arabic)' }}
               />
+
+              {formData.ibarat_text && (
+                <div className="mt-4 border rounded-lg p-4 bg-white/50">
+                  <Label className="mb-2 block text-muted-foreground">Preview Hasil:</Label>
+                  <ArabicText content={formData.ibarat_text} />
+                </div>
+              )}
             </div>
 
             <div className="space-y-4">

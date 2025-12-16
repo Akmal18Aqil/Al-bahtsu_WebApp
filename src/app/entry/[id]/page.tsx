@@ -5,6 +5,7 @@ import { ArrowLeft, Calendar, BookOpen, Users } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import ArabicText from '@/components/ArabicText'
 import { supabase } from '@/lib/supabaseClient'
 
 interface EntryDetailPageProps {
@@ -112,7 +113,7 @@ export default async function EntryDetailPage({ params }: EntryDetailPageProps) 
                   <Users className="w-5 h-5" />
                   Pertanyaan
                 </h3>
-                <p className="text-muted-foreground leading-relaxed">
+                <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
                   {entryWithBooks.question_text}
                 </p>
               </div>
@@ -127,19 +128,12 @@ export default async function EntryDetailPage({ params }: EntryDetailPageProps) 
               </div>
             </div>
 
-            {entryWithBooks.ibarat_text && (
-              <div>
-                <h3 className="font-semibold text-lg mb-2">Ibarat Fikih</h3>
-                <div className="bg-muted/50 p-4 rounded-lg">
-                  <p
-                    className="font-arabic rtl text-lg leading-loose text-right"
-                    style={{ fontFamily: 'var(--font-arabic)' }}
-                  >
-                    {entryWithBooks.ibarat_text}
-                  </p>
-                </div>
+            <div>
+              <h3 className="font-semibold text-lg mb-2">Ibarat Fikih</h3>
+              <div className="bg-muted/50 p-4 rounded-lg">
+                <ArabicText content={entryWithBooks.ibarat_text} />
               </div>
-            )}
+            </div>
 
             {/* Source Books Section */}
             {entryWithBooks.source_books && entryWithBooks.source_books.length > 0 && (
