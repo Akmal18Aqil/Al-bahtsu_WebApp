@@ -49,8 +49,12 @@ export async function generateMetadata({ params }: EntryDetailPageProps): Promis
   }
 }
 
-export default async function EntryDetailPage({ params }: EntryDetailPageProps) {
+export default async function EntryDetailPage({ params, searchParams }: EntryDetailPageProps & { searchParams: Promise<{ q?: string }> }) {
   const { id } = await params
+  const { q } = await searchParams
+
+  const backLink = q ? `/search?q=${encodeURIComponent(q)}` : '/search'
+
   const { data: entry, error } = await supabase
     .from('fiqh_entries')
     .select('*')
@@ -87,7 +91,7 @@ export default async function EntryDetailPage({ params }: EntryDetailPageProps) 
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto">
         <div className="mb-6">
-          <Link href="/search">
+          <Link href={backLink}>
             <Button variant="ghost" className="mb-4">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Kembali ke Pencarian

@@ -29,7 +29,7 @@ const ArabicText: React.FC<ArabicTextProps> = ({ content, className }) => {
                 const parts = parseFormatting(paragraph);
 
                 return (
-                    <p key={pIndex} className="font-arabic rtl text-lg leading-loose text-right">
+                    <p key={pIndex} className="font-arabic rtl text-2xl leading-loose text-right">
                         {parts}
                     </p>
                 );

@@ -17,11 +17,16 @@ interface FiqhEntry {
 
 interface FiqhCardProps {
   entry: FiqhEntry
+  searchQuery?: string
 }
 
-export default function FiqhCard({ entry }: FiqhCardProps) {
+export default function FiqhCard({ entry, searchQuery }: FiqhCardProps) {
+  const href = searchQuery
+    ? `/entry/${entry.id}?q=${encodeURIComponent(searchQuery)}`
+    : `/entry/${entry.id}`
+
   return (
-    <Link href={`/entry/${entry.id}`}>
+    <Link href={href}>
       <Card className="hover:shadow-md transition-shadow cursor-pointer mb-6">
         <CardHeader>
           <div className="flex items-start justify-between gap-2">
@@ -44,7 +49,7 @@ export default function FiqhCard({ entry }: FiqhCardProps) {
               </h4>
               <p className="text-sm line-clamp-3">{entry.answer_summary}</p>
             </div>
-            
+
             {entry.ibarat_text && (
               <div>
                 <h4 className="font-medium text-sm text-muted-foreground mb-1">

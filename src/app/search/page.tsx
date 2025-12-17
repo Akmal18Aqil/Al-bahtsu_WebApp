@@ -87,7 +87,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 Menampilkan {results.length} dari {totalResults} hasil
               </p>
               {results.map((entry) => (
-                <FiqhCard key={entry.id} entry={entry} />
+                <FiqhCard key={entry.id} entry={entry} searchQuery={query} />
               ))}
               <div className="flex items-center justify-between mt-8">
                 <Button asChild variant="outline" disabled={page <= 1}>

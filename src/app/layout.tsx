@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Noto_Naskh_Arabic } from "next/font/google";
+import { Inter, Amiri } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import Providers from "@/components/Providers";
@@ -9,10 +9,10 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
-const notoNaskhArabic = Noto_Naskh_Arabic({
+const amiri = Amiri({
   variable: "--font-arabic",
   subsets: ["arabic"],
-  weight: ["400", "600", "700"],
+  weight: ["400", "700"],
 });
 
 export const metadata: Metadata = {
@@ -40,7 +40,7 @@ export default function RootLayout({
   return (
     <html lang="id" suppressHydrationWarning>
       <body
-        className={`${inter.variable} ${notoNaskhArabic.variable} font-sans antialiased bg-background text-foreground`}
+        className={`${inter.variable} ${amiri.variable} font-sans antialiased bg-background text-foreground`}
       >
         <Providers>
           {children}
