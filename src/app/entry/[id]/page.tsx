@@ -39,12 +39,12 @@ export async function generateMetadata({ params }: EntryDetailPageProps): Promis
 
   if (!entry) {
     return {
-      title: 'Entri Tidak Ditemukan - Muara',
+      title: 'Entri Tidak Ditemukan - al-bahtsu',
     }
   }
 
   return {
-    title: `${entry.title} - Muara`,
+    title: `${entry.title} - al-bahtsu`,
     description: entry.title,
   }
 }
@@ -90,9 +90,9 @@ export default async function EntryDetailPage({ params, searchParams }: EntryDet
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto">
-        <div className="mb-6">
+        <div className="sticky top-0 z-50 bg-background/95 backdrop-blur py-4 mb-6 border-b -mx-4 px-4 md:mx-0 md:px-0 md:border-b-0">
           <Link href={backLink}>
-            <Button variant="ghost" className="mb-4">
+            <Button variant="ghost" className="pl-0">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Kembali ke Pencarian
             </Button>
@@ -117,7 +117,7 @@ export default async function EntryDetailPage({ params, searchParams }: EntryDet
                   <Users className="w-5 h-5" />
                   Pertanyaan
                 </h3>
-                <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                <p className=" leading-relaxed whitespace-pre-wrap">
                   {entryWithBooks.question_text}
                 </p>
               </div>

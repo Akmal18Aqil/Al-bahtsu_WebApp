@@ -16,18 +16,18 @@ const scheherazade = Scheherazade_New({
 });
 
 export const metadata: Metadata = {
-  title: "Muara - Mesin Pencari Rumusan & Ibarat Fikih",
+  title: "al-bahtsu - Mesin Pencari Rumusan & Ibarat Fikih",
   description: "Platform pencarian canggih untuk menemukan rumusan musyawarah dan ibarat fikih dari berbagai sumber terpercaya.",
-  keywords: ["fikih", "islam", "rumusan", "ibarat", "musyawarah", "muara", "NU"],
+  keywords: ["fikih", "islam", "rumusan", "ibarat", "musyawarah", "al-bahtsu", "NU"],
   authors: [{ name: "Khazanah Fikih Team" }],
   openGraph: {
-    title: "Muara",
+    title: "al-bahtsu",
     description: "Platform pencarian canggih untuk menemukan rumusan musyawarah dan ibarat fikih",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Muara",
+    title: "al-bahtsu",
     description: "Platform pencarian canggih untuk menemukan rumusan musyawarah dan ibarat fikih",
   },
 };

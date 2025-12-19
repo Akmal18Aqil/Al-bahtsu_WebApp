@@ -47,7 +47,7 @@ export default function LoginPage() {
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Login Admin</CardTitle>
           <CardDescription>
-            Masuk ke panel administrasi Muara
+            Masuk ke panel administrasi al-bahtsu
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -14,8 +14,8 @@ export async function generateMetadata({ searchParams }: SearchPageProps): Promi
   const params = (await searchParams) as any
   const query = params?.q || ''
   return {
-    title: query ? `Hasil Pencarian: "${query}" - Muara` : 'Pencarian - Muara',
-    description: query ? `Hasil pencarian untuk "${query}" di Muara` : 'Cari rumusan dan ibarat fikih',
+    title: query ? `Hasil Pencarian: "${query}" - al-bahtsu` : 'Pencarian - al-bahtsu',
+    description: query ? `Hasil pencarian untuk "${query}" di al-bahtsu` : 'Cari rumusan dan ibarat fikih',
   }
 }
 
