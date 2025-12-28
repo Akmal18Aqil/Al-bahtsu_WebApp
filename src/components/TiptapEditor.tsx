@@ -8,17 +8,60 @@ import Color from '@tiptap/extension-color'
 import Underline from '@tiptap/extension-underline'
 import TextAlign from '@tiptap/extension-text-align'
 import { Bold as BoldIcon, Italic as ItalicIcon, Underline as UnderlineIcon, AlignCenter, AlignRight, AlignLeft } from 'lucide-react'
+import { Extension } from '@tiptap/core'
+import { AlignLeft as AlignLeftIcon, AlignRight as AlignRightIcon, Languages } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+
+// Custom extension to add 'dir' attribute
+const DirectionExtension = Extension.create({
+    name: 'direction',
+    addGlobalAttributes() {
+        return [
+            {
+                types: ['heading', 'paragraph'],
+                attributes: {
+                    dir: {
+                        default: null,
+                        parseHTML: element => element.getAttribute('dir'),
+                        renderHTML: attributes => {
+                            if (!attributes.dir) {
+                                return {}
+                            }
+                            return { dir: attributes.dir }
+                        },
+                    },
+                },
+            },
+        ]
+    },
+    addCommands() {
+        return {
+            setDirection: (direction: 'ltr' | 'rtl' | 'auto') => ({ commands }) => {
+                return commands.updateAttributes('paragraph', { dir: direction }) ||
+                    commands.updateAttributes('heading', { dir: direction })
+            },
+        }
+    },
+})
+
+declare module '@tiptap/core' {
+    interface Commands<ReturnType> {
+        direction: {
+            setDirection: (direction: 'ltr' | 'rtl' | 'auto') => ReturnType
+        }
+    }
+}
 
 interface TiptapEditorProps {
     value: string
     onChange: (value: string) => void
     disabled?: boolean
-    mode?: 'arabic' | 'standard' // Default to 'arabic' for backward compatibility
+    mode?: 'arabic' | 'standard' | 'mixed'
 }
 
 const TiptapEditor = ({ value, onChange, disabled, mode = 'arabic' }: TiptapEditorProps) => {
     const isArabic = mode === 'arabic'
+    const isMixed = mode === 'mixed'
 
     const editor = useEditor({
         immediatelyRender: false,
@@ -35,15 +78,15 @@ const TiptapEditor = ({ value, onChange, disabled, mode = 'arabic' }: TiptapEdit
                 alignments: ['left', 'center', 'right', 'justify'],
                 defaultAlignment: isArabic ? 'right' : 'left',
             }),
+            DirectionExtension,
         ],
         content: value,
         editable: !disabled,
         editorProps: {
             attributes: {
-                class: `min-h-[200px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${isArabic ? 'text-2xl font-arabic leading-loose rtl text-right' : 'text-sm text-left'}`,
+                class: `min-h-[200px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${isArabic ? 'text-2xl font-arabic leading-loose rtl text-right' : isMixed ? 'text-lg' : 'text-sm text-left'}`,
                 style: isArabic ? 'font-family: var(--font-arabic);' : ''
             },
-            // Better paste handling
             transformPastedHTML(html) {
                 return html;
             },
@@ -149,6 +192,40 @@ const TiptapEditor = ({ value, onChange, disabled, mode = 'arabic' }: TiptapEdit
                 >
                     <AlignRight className="h-4 w-4" />
                 </Button>
+
+                {isMixed && (
+                    <>
+                        <div className="w-px h-4 bg-slate-300 mx-1" />
+                        <Button
+                            type="button"
+                            variant={editor.isActive({ dir: 'ltr' }) ? 'secondary' : 'ghost'}
+                            size="sm"
+                            onClick={() => {
+                                editor.chain().focus().setDirection('ltr').setTextAlign('left').run()
+                            }}
+                            className="h-8 w-8 p-0"
+                            title="Arah Teks LTR (Latin)"
+                            disabled={disabled}
+                        >
+                            <Languages className="h-4 w-4" />
+                            <span className="sr-only">LTR</span>
+                        </Button>
+                        <Button
+                            type="button"
+                            variant={editor.isActive({ dir: 'rtl' }) ? 'secondary' : 'ghost'}
+                            size="sm"
+                            onClick={() => {
+                                editor.chain().focus().setDirection('rtl').setTextAlign('right').run()
+                            }}
+                            className="h-8 w-8 p-0"
+                            title="Arah Teks RTL (Arab)"
+                            disabled={disabled}
+                        >
+                            <span className="font-arabic text-xs font-bold">ع</span>
+                            <span className="sr-only">RTL</span>
+                        </Button>
+                    </>
+                )}
 
                 <div className="w-px h-4 bg-slate-300 mx-1" />
 

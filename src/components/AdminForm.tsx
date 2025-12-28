@@ -131,6 +131,7 @@ export default function AdminForm({ entry, isEdit = false }: AdminFormProps) {
 
 
   const watchedIbarat = form.watch('ibarat_text')
+  const watchedEntryType = form.watch('entry_type')
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -330,6 +331,7 @@ export default function AdminForm({ entry, isEdit = false }: AdminFormProps) {
                         <SelectContent>
                           <SelectItem value="ibarat">Ibarat</SelectItem>
                           <SelectItem value="rumusan">Rumusan</SelectItem>
+                          <SelectItem value="makalah">Makalah</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -338,55 +340,61 @@ export default function AdminForm({ entry, isEdit = false }: AdminFormProps) {
                 />
               </div>
 
-              <FormField
-                control={form.control}
-                name="question_text"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Teks Pertanyaan (Opsional)</FormLabel>
-                    <FormControl>
-                      <TiptapEditor
-                        value={field.value || ''}
-                        onChange={field.onChange}
-                        disabled={isPending}
-                        mode="standard"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Conditional Rendering based on Entry Type */}
+              {watchedEntryType !== 'makalah' && (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="question_text"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Teks Pertanyaan (Opsional)</FormLabel>
+                        <FormControl>
+                          <TiptapEditor
+                            value={field.value || ''}
+                            onChange={field.onChange}
+                            disabled={isPending}
+                            mode="standard"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-              <FormField
-                control={form.control}
-                name="answer_summary"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Ringkasan Jawaban *</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Teks jawaban/rumusan dalam Bahasa Indonesia"
-                        rows={6}
-                        {...field}
-                        disabled={isPending}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  <FormField
+                    control={form.control}
+                    name="answer_summary"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Ringkasan Jawaban *</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Teks jawaban/rumusan dalam Bahasa Indonesia"
+                            rows={6}
+                            {...field}
+                            disabled={isPending}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </>
+              )}
 
               <FormField
                 control={form.control}
                 name="ibarat_text"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Teks Ibarat *</FormLabel>
+                    <FormLabel>{watchedEntryType === 'makalah' ? 'Isi Makalah *' : 'Teks Ibarat *'}</FormLabel>
                     <FormControl>
                       <TiptapEditor
-                        value={field.value}
+                        value={field.value || ''}
                         onChange={field.onChange}
                         disabled={isPending}
+                        mode={watchedEntryType === 'makalah' ? 'mixed' : 'arabic'}
                       />
                     </FormControl>
                     <FormMessage />
@@ -394,93 +402,98 @@ export default function AdminForm({ entry, isEdit = false }: AdminFormProps) {
                 )}
               />
 
-              {watchedIbarat && (
+              {/* Preview only for non-Makalah or if needed. Makalah has WYSIWYG Tiptap so maybe redundant but safe to keep if user wants to see raw arabic text? 
+                  Actually ArabicText component forces Arabic font. Makalah users might strictly use Indonesian.
+                  Let's hide it for Makalah to avoid confusion. */}
+              {watchedIbarat && watchedEntryType !== 'makalah' && (
                 <div className="mt-4 border rounded-lg p-4 bg-white/50">
                   <Label className="mb-2 block text-muted-foreground">Preview Hasil:</Label>
                   <ArabicText content={watchedIbarat} />
                 </div>
               )}
 
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <FormLabel>Sumber Kitab (Opsional)</FormLabel>
-                    <FormDescription>Tambahkan satu atau lebih sumber kitab beserta detailnya</FormDescription>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => append({ kitab_name: '', details: '', order_index: fields.length })}
-                    disabled={isPending}
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Tambah Kitab
-                  </Button>
-                </div>
-
-                <div className="space-y-4 bg-slate-50 p-4 rounded-lg">
-                  {fields.length > 0 ? (
-                    fields.map((field, index) => (
-                      <div key={field.id} className="space-y-3 p-4 bg-white border rounded-lg relative">
-                        <div className="absolute top-2 right-2">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => remove(index)}
-                            disabled={isPending}
-                            className="h-6 w-6 p-0"
-                          >
-                            <Trash2 className="w-4 h-4 text-red-500" />
-                          </Button>
-                        </div>
-
-                        <FormField
-                          control={form.control}
-                          name={`source_books.${index}.kitab_name`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-sm">Nama Kitab {index + 1}</FormLabel>
-                              <FormControl>
-                                <Input placeholder="contoh: Fathul Mu'in" {...field} disabled={isPending} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={form.control}
-                          name={`source_books.${index}.details`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-sm">Detail Sumber</FormLabel>
-                              <FormControl>
-                                <Input placeholder="contoh: Bab Buyu', Hal. 50" {...field} disabled={isPending} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                    ))
-                  ) : (
-                    <div className="p-4 text-center text-muted-foreground bg-white border border-dashed rounded-lg">
-                      Belum ada sumber kitab. Klik "Tambah Kitab" untuk menambahkan.
+              {watchedEntryType !== 'makalah' && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <FormLabel>Sumber Kitab (Opsional)</FormLabel>
+                      <FormDescription>Tambahkan satu atau lebih sumber kitab beserta detailnya</FormDescription>
                     </div>
-                  )}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => append({ kitab_name: '', details: '', order_index: fields.length })}
+                      disabled={isPending}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Tambah Kitab
+                    </Button>
+                  </div>
+
+                  <div className="space-y-4 bg-slate-50 p-4 rounded-lg">
+                    {fields.length > 0 ? (
+                      fields.map((field, index) => (
+                        <div key={field.id} className="space-y-3 p-4 bg-white border rounded-lg relative">
+                          <div className="absolute top-2 right-2">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => remove(index)}
+                              disabled={isPending}
+                              className="h-6 w-6 p-0"
+                            >
+                              <Trash2 className="w-4 h-4 text-red-500" />
+                            </Button>
+                          </div>
+
+                          <FormField
+                            control={form.control}
+                            name={`source_books.${index}.kitab_name`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-sm">Nama Kitab {index + 1}</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="contoh: Fathul Mu'in" {...field} disabled={isPending} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name={`source_books.${index}.details`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-sm">Detail Sumber</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="contoh: Bab Buyu', Hal. 50" {...field} disabled={isPending} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-4 text-center text-muted-foreground bg-white border border-dashed rounded-lg">
+                        Belum ada sumber kitab. Klik "Tambah Kitab" untuk menambahkan.
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
 
               <FormField
                 control={form.control}
                 name="musyawarah_source"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Sumber Musyawarah (Opsional)</FormLabel>
+                    <FormLabel>{watchedEntryType === 'makalah' ? 'Sumber / Referensi *' : 'Sumber Musyawarah (Opsional)'}</FormLabel>
                     <FormControl>
-                      <Input placeholder="contoh: LBMNU Jatim, 2023" {...field} disabled={isPending} />
+                      <Input placeholder={watchedEntryType === 'makalah' ? 'contoh: Jurnal Ilmiah Fiqih, Vol 1, 2024' : 'contoh: LBMNU Jatim, 2023'} {...field} disabled={isPending} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
